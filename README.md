@@ -15,9 +15,11 @@ pipx install git+https://github.com/PontificAgima/tap-planfix@master
 
 ### Source Authentication and Authorization
 
-Create .env file with 
-PLANFIX_URL - your planfix url 
-PLANFIX_TOKEN - your planfix token
+####Create .env file with 
+
+####PLANFIX_URL - your planfix url 
+
+####PLANFIX_TOKEN - your planfix token
 
 ## Usage
 
