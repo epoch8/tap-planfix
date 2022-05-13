@@ -4,19 +4,18 @@ import requests
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, List, Iterable
 import copy
+import os
 
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import BearerTokenAuthenticator
 
 
-SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
-
-
 class PlanfixStream(RESTStream):
     """Planfix stream class."""
 
-    url_base = "https://youtravel.planfix.ru/rest"
+    url_base = os.environ.get("PLANFIX_URL", "https://youtravel.planfix.ru/rest")
+    planfix_token = os.environ.get("PLANFIX_TOKEN", "d5173cb610825049967f700c2347a487")
     rest_method = "POST"
     payload_offset = 0
 
@@ -27,7 +26,7 @@ class PlanfixStream(RESTStream):
         """Return a new authenticator object."""
         return BearerTokenAuthenticator.create_for_stream(
             self,
-            token="d5173cb610825049967f700c2347a487"
+            token=self.planfix_token
         )
 
     def get_next_page_token(
@@ -70,7 +69,6 @@ class PlanfixStream(RESTStream):
         }
 
         self.payload_offset += 100
-        # self.payload_offset = 100000000
         return payload
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:

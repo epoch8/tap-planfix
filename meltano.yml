@@ -1,11 +1,11 @@
 version: 1
 send_anonymous_usage_stats: true
-project_id: a8ec3170-c19a-476d-a5e4-af7bd6a6d6fe
+project_id: 08140e91-bb02-4c3c-a45a-c29f103b61b8
 plugins:
   extractors:
   - name: tap-planfix
     namespace: tap_planfix
-    pip_url: -e .
+    pip_url: https://github.com/PontificAgima/tap-planfix
     capabilities:
     - state
     - catalog
@@ -22,16 +22,3 @@ plugins:
   - name: target-jsonl
     variant: andyh1203
     pip_url: target-jsonl
-  - name: target-csv
-    variant: hotgluexyz
-    pip_url: git+https://github.com/hotgluexyz/target-csv.git@0.3.3
-  - name: target-bigquery
-    variant: adswerve
-    pip_url: git+https://github.com/adswerve/target-bigquery.git@0.11.3
-    config:
-      project_id: probable-bebop-305708
-      location: US
-      dataset_id: raw
-      credentials_path: /home/jim/PycharmProjects/tap-target/tap-planfix/client_secrets.json
-      validate_records: true
-
