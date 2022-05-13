@@ -14,8 +14,8 @@ from singer_sdk.authenticators import BearerTokenAuthenticator
 class PlanfixStream(RESTStream):
     """Planfix stream class."""
 
-    url_base = os.environ.get("PLANFIX_URL", "https://youtravel.planfix.ru/rest")
-    planfix_token = os.environ.get("PLANFIX_TOKEN", "d5173cb610825049967f700c2347a487")
+    url_base = os.environ.get("PLANFIX_URL")
+    planfix_token = os.environ.get("PLANFIX_TOKEN")
     rest_method = "POST"
     payload_offset = 0
 
