@@ -8,7 +8,7 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 
 ```bash
-pipx install git+https://github.com/epoch8/tap-planfix@master
+pip install git+https://github.com/epoch8/tap-planfix@master
 ```
 
 ## Configuration
