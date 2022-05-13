@@ -1,0 +1,37 @@
+version: 1
+send_anonymous_usage_stats: true
+project_id: a8ec3170-c19a-476d-a5e4-af7bd6a6d6fe
+plugins:
+  extractors:
+  - name: tap-planfix
+    namespace: tap_planfix
+    pip_url: -e .
+    capabilities:
+    - state
+    - catalog
+    - discover
+    settings:
+    - name: username
+    - name: password
+      kind: password
+    - name: start_date
+      value: '2010-01-01T00:00:00Z'
+    config:
+      start_date: '2010-01-01T00:00:00Z'
+  loaders:
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl
+  - name: target-csv
+    variant: hotgluexyz
+    pip_url: git+https://github.com/hotgluexyz/target-csv.git@0.3.3
+  - name: target-bigquery
+    variant: adswerve
+    pip_url: git+https://github.com/adswerve/target-bigquery.git@0.11.3
+    config:
+      project_id: probable-bebop-305708
+      location: US
+      dataset_id: raw
+      credentials_path: /home/jim/PycharmProjects/tap-target/tap-planfix/client_secrets.json
+      validate_records: true
+
