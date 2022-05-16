@@ -17,7 +17,6 @@ class PlanfixStream(RESTStream):
     url_base = os.environ.get("PLANFIX_URL")
     planfix_token = os.environ.get("PLANFIX_TOKEN")
     rest_method = "POST"
-    payload_offset = 0
 
     records_jsonpath = "$.contacts[*]"
 
@@ -38,37 +37,19 @@ class PlanfixStream(RESTStream):
         if not results or not results["contacts"]:
             return None
 
-        return response.url
-
-    def request_records(self, context: Optional[dict]) -> Iterable[dict]:
-        next_page_token: Any = None
-        finished = False
-        decorated_request = self.request_decorator(self._request)
-
-        while not finished:
-            prepared_request = self.prepare_request(
-                context, next_page_token=next_page_token
-            )
-            resp = decorated_request(prepared_request, context)
-            for row in self.parse_response(resp):
-                yield row
-            previous_token = copy.deepcopy(next_page_token)
-            next_page_token = self.get_next_page_token(
-                response=resp, previous_token=previous_token
-            )
-            finished = not next_page_token
+        next_page_token = previous_token + 100 if previous_token else 100
+        return next_page_token
 
     def prepare_request_payload(
         self, context: Optional[dict], next_page_token: Optional[Any]
     ) -> Optional[dict]:
 
         payload = {
-          "offset": self.payload_offset,
+          "offset": next_page_token,
           "pageSize": 100,
           "fields": "id,name,lastname,email,phones"
         }
 
-        self.payload_offset += 100
         return payload
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
