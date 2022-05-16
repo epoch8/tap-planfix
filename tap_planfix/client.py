@@ -17,6 +17,7 @@ class PlanfixStream(RESTStream):
     url_base = os.environ.get("PLANFIX_URL")
     planfix_token = os.environ.get("PLANFIX_TOKEN")
     rest_method = "POST"
+    PAGE_SIZE = 100
 
     records_jsonpath = "$.contacts[*]"
 
@@ -37,7 +38,7 @@ class PlanfixStream(RESTStream):
         if not results or not results["contacts"]:
             return None
 
-        next_page_token = previous_token + 100 if previous_token else 100
+        next_page_token = previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
         return next_page_token
 
     def prepare_request_payload(
@@ -46,7 +47,7 @@ class PlanfixStream(RESTStream):
 
         payload = {
           "offset": next_page_token,
-          "pageSize": 100,
+          "pageSize": self.PAGE_SIZE,
           "fields": "id,name,lastname,email,phones"
         }
 
