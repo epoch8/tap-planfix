@@ -14,19 +14,21 @@ from singer_sdk.authenticators import BearerTokenAuthenticator
 class PlanfixStream(RESTStream):
     """Planfix stream class."""
 
-    url_base = os.environ.get("PLANFIX_URL")
-    planfix_token = os.environ.get("PLANFIX_TOKEN")
     rest_method = "POST"
     PAGE_SIZE = 100
 
     records_jsonpath = "$.contacts[*]"
 
     @property
+    def url_base(self) -> str:
+        return self.config.get("planfix_url")
+
+    @property
     def authenticator(self) -> BearerTokenAuthenticator:
         """Return a new authenticator object."""
         return BearerTokenAuthenticator.create_for_stream(
             self,
-            token=self.planfix_token
+            token=self.config.get("planfix_token")
         )
 
     def get_next_page_token(

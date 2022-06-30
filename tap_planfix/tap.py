@@ -25,6 +25,14 @@ class TapPlanfix(Tap):
             th.DateTimeType,
             description="The earliest record date to sync"
         ),
+        th.Property(
+            "planfiix_url",
+            th.StringType,
+        ),
+        th.Property(
+            "planfix_token",
+            th.StringType
+        )
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
