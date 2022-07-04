@@ -7,8 +7,6 @@ from singer_sdk.testing import get_standard_tap_tests
 from tap_planfix.tap import TapPlanfix
 
 SAMPLE_CONFIG = {
-    "start_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
-
 }
 
 

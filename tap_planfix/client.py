@@ -17,8 +17,6 @@ class PlanfixStream(RESTStream):
     rest_method = "POST"
     PAGE_SIZE = 100
 
-    records_jsonpath = "$.contacts[*]"
-
     @property
     def url_base(self) -> str:
         return self.config.get("planfix_url")
@@ -56,6 +54,5 @@ class PlanfixStream(RESTStream):
         return payload
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
-        """Parse the response and return an iterator of result rows."""
         yield from extract_jsonpath(self.records_jsonpath, input=response.json())
 
