@@ -91,16 +91,18 @@ class TasksStream(PlanfixStream):
     ).to_dict()
 
     def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+        if not row.get("customFieldData"):
+                    return row
+
         custom_fields = row.pop("customFieldData")
         processed_fields = {}
-        if custom_fields:
-            for field in custom_fields:
-                if isinstance(field["value"], dict) and field['value'].get("datetime") != None:
-                    processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
-                elif isinstance(field["value"], dict) and field['value'].get("value") != None:
-                    processed_fields[(field["field"])["name"]] = field["value"]["value"]
-                else:
-                    processed_fields[(field["field"])["name"]] = field["value"]
+        for field in custom_fields:
+            if isinstance(field["value"], dict) and field['value'].get("datetime") != None:
+                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
+            elif isinstance(field["value"], dict) and field['value'].get("value") != None:
+                processed_fields[(field["field"])["name"]] = field["value"]["value"]
+            else:
+                processed_fields[(field["field"])["name"]] = field["value"]
         if "Страна" in processed_fields:
             processed_fields["Country"] = processed_fields.pop("Страна")
         if "Промокод" in processed_fields:    
@@ -110,5 +112,5 @@ class TasksStream(PlanfixStream):
         if "Дата отмены бронирования" in processed_fields:    
             processed_fields["Booking canceling date"] = processed_fields.pop("Дата отмены бронирования")
         row.update(processed_fields)
-        return row
 
+        return row
