@@ -99,10 +99,14 @@ class TasksStream(PlanfixStream):
                     processed_fields[(field["field"])["name"]] = field["value"]["value"]
                 else:
                     processed_fields[(field["field"])["name"]] = field["value"]
-        processed_fields["Country"] = processed_fields.pop("Страна")
-        processed_fields["Promocode"] = processed_fields.pop("Промокод")
-        processed_fields["Prepayment date"] = processed_fields.pop("Дата предоплаты")
-        processed_fields["Booking canceling date"] = processed_fields.pop("Дата отмены бронирования")
+        if "Страна" in processed_fields:
+            processed_fields["Country"] = processed_fields.pop("Страна")
+        if "Промокод" in processed_fields:    
+            processed_fields["Promocode"] = processed_fields.pop("Промокод")
+        if "Дата предоплаты" in processed_fields:    
+            processed_fields["Prepayment date"] = processed_fields.pop("Дата предоплаты")
+        if "Дата отмены бронирования" in processed_fields:    
+            processed_fields["Booking canceling date"] = processed_fields.pop("Дата отмены бронирования")
         row.update(processed_fields)
         return row
 
