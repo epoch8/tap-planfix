@@ -95,7 +95,9 @@ class TasksStream(PlanfixStream):
         processed_fields = {}
         if custom_fields:
             for field in custom_fields:
-                if isinstance(field["value"], dict):
+                if isinstance(field["value"], dict) and field['value'].get("datetime") != None:
+                    processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
+                elif isinstance(field["value"], dict) and field['value'].get("value") != None:
                     processed_fields[(field["field"])["name"]] = field["value"]["value"]
                 else:
                     processed_fields[(field["field"])["name"]] = field["value"]
