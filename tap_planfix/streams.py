@@ -70,7 +70,7 @@ class TasksStream(PlanfixStream):
         th.Property("Country", th.StringType),
         th.Property("Promocode", th.StringType),
         th.Property("Prepayment date", th.StringType),
-        th.Property("Дата отмены бронирования", th.StringType),
+        th.Property("Booking canceling date", th.StringType),
         th.Property("Budget", th.StringType),
         th.Property("Prefix", th.StringType),
         th.Property("Currency", th.StringType),
