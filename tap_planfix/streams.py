@@ -67,9 +67,9 @@ class TasksStream(PlanfixStream):
         th.Property("name", th.StringType, description=""),
         th.Property("UTM Source", th.StringType),
         th.Property("TourID", th.StringType),
-        th.Property("Страна", th.StringType),
-        th.Property("Промокод", th.StringType),
-        th.Property("Дата предоплаты", th.StringType),
+        th.Property("Country", th.StringType),
+        th.Property("Promocode", th.StringType),
+        th.Property("Prepayment date", th.StringType),
         th.Property("Дата отмены бронирования", th.StringType),
         th.Property("Budget", th.StringType),
         th.Property("Prefix", th.StringType),
@@ -99,7 +99,10 @@ class TasksStream(PlanfixStream):
                     processed_fields[(field["field"])["name"]] = field["value"]["value"]
                 else:
                     processed_fields[(field["field"])["name"]] = field["value"]
-
+        processed_fields["Country"] = processed_fields.pop("Страна")
+        processed_fields["Promocode"] = processed_fields.pop("Промокод")
+        processed_fields["Prepayment date"] = processed_fields.pop("Дата предоплаты")
+        processed_fields["Booking canceling date"] = processed_fields.pop("Дата отмены бронирования")
         row.update(processed_fields)
         return row
 
