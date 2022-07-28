@@ -57,7 +57,7 @@ class TasksStream(PlanfixStream):
         payload = {
             "offset": next_page_token,
             "pageSize": self.PAGE_SIZE,
-            "fields": "id,name,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582",
+            "fields": "id,name,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582,47864,47656,47658,47660,47662,47876",
         }
 
         return payload
@@ -88,6 +88,12 @@ class TasksStream(PlanfixStream):
         th.Property("Remaining amount", th.StringType),
         th.Property("Postpaid number", th.StringType),
         th.Property("Order number", th.StringType),
+        th.Property("UTM_STRING", th.StringType),
+        th.Property("UTM Medium", th.StringType),
+        th.Property("UTM Campaign", th.StringType),
+        th.Property("UTM Content", th.StringType),
+        th.Property("UTM Term", th.StringType),
+        th.Property("UF_GOOGLE_CID", th.StringType),
     ).to_dict()
 
     def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
