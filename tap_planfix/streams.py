@@ -57,7 +57,7 @@ class TasksStream(PlanfixStream):
         payload = {
             "offset": next_page_token,
             "pageSize": self.PAGE_SIZE,
-            "fields": "id,name,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582,47864,47656,47658,47660,47662,47876",
+            "fields": "id,name,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582,47864,47656,47658,47660,47662,47876,47306,47344,47364,47520,47522",
         }
 
         return payload
@@ -94,12 +94,16 @@ class TasksStream(PlanfixStream):
         th.Property("UTM Content", th.StringType),
         th.Property("UTM Term", th.StringType),
         th.Property("UF_GOOGLE_CID", th.StringType),
+        th.Property("Date and time of transition to status", th.StringType),
+        th.Property("Lead task", th.StringType),
+        th.Property("Cost per lead (priority)", th.StringType),
+        th.Property("User FIO", th.StringType),
+        th.Property("User email", th.StringType),
     ).to_dict()
 
     def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
         if not row.get("customFieldData"):
                     return row
-
         custom_fields = row.pop("customFieldData")
         processed_fields = {}
         for field in custom_fields:
@@ -117,6 +121,14 @@ class TasksStream(PlanfixStream):
             processed_fields["Prepayment date"] = processed_fields.pop("Дата предоплаты")
         if "Дата отмены бронирования" in processed_fields:    
             processed_fields["Booking canceling date"] = processed_fields.pop("Дата отмены бронирования")
+        if "Дата и время перехода в статус" in processed_fields:
+            processed_fields["Date and time of transition to status"] = processed_fields.pop("Дата и время перехода в статус")
+        if "Стоимость лида (приоритетность)" in processed_fields:
+            processed_fields["Cost per lead (priority)"] = processed_fields.pop("Стоимость лида (приоритетность)")      
+        if "ФИО пользователя" in processed_fields:
+            processed_fields["User FIO"] = processed_fields.pop("ФИО пользователя")
+        if "E-mail пользователя" in processed_fields:
+            processed_fields["User email"] = processed_fields.pop("E-mail пользователя") 
         row.update(processed_fields)
 
         return row
