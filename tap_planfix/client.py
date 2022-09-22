@@ -41,17 +41,6 @@ class PlanfixStream(RESTStream):
         next_page_token = previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
         return next_page_token
 
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-
-        payload = {
-          "offset": next_page_token,
-          "pageSize": self.PAGE_SIZE,
-          "fields": "id,name,lastname,email,phones"
-        }
-
-        return payload
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         yield from extract_jsonpath(self.records_jsonpath, input=response.json())

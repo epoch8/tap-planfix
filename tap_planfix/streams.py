@@ -30,7 +30,57 @@ class ContactsStream(PlanfixStream):
             ),
             description="",
         ),
+        th.Property("UF_GOOGLE_CID", th.StringType),
+        th.Property("UTM markup", th.StringType),
+        th.Property("REF", th.StringType),
+        th.Property("SiteUserID", th.StringType),
+        th.Property("PF id", th.StringType),
+        th.Property("User interface language", th.StringType),
+        th.Property("Lead (for analytics)", th.BooleanType),
+        th.Property("Transition date to Lead+45d", th.StringType),
+        th.Property("Date of last message +15d", th.StringType),
+        th.Property("Profile", th.StringType),
+        th.Property("Contact person", th.StringType),
     ).to_dict()
+
+    def prepare_request_payload(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Optional[dict]:
+
+        payload = {
+          "offset": next_page_token,
+          "pageSize": self.PAGE_SIZE,
+          "fields": "id,name,lastname,email,phones,47368,47376,47378,47666,47676,47682,47918,47920,47924,47932,47938"
+        }
+
+        return payload
+
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+        if not row.get("customFieldData"):
+                    return row
+        custom_fields = row.pop("customFieldData")
+        processed_fields = {}
+        for field in custom_fields:
+            if isinstance(field["value"], dict) and field['value'].get("datetime") != None:
+                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
+            elif isinstance(field["value"], dict) and field['value'].get("value") != None:
+                processed_fields[(field["field"])["name"]] = field["value"]["value"]
+            else:
+                processed_fields[(field["field"])["name"]] = field["value"]
+        if "UTM разметка" in processed_fields:
+            processed_fields["UTM markup"] = processed_fields.pop("UTM разметка")
+        if "Язык пользовательского интерфейса" in processed_fields:    
+            processed_fields["User interface language"] = processed_fields.pop("Язык пользовательского интерфейса")
+        if "Лид (для аналитики)" in processed_fields:    
+            processed_fields["Lead (for analytics)"] = processed_fields.pop("Лид (для аналитики)")
+        if 'Дата перехода в \"Лид\"+45д' in processed_fields:    
+            processed_fields["Transition date to Lead+45d"] = processed_fields.pop('Дата перехода в \"Лид\"+45д')
+        if "Дата посл сообщения +15д" in processed_fields:
+            processed_fields["Date of last message +15d"] = processed_fields.pop("Дата посл сообщения +15д")
+        row.update(processed_fields)
+
+        return row
+
 
 
 class TasksStream(PlanfixStream):
