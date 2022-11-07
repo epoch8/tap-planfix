@@ -178,7 +178,9 @@ class TasksStream(PlanfixStream):
         if "ФИО пользователя" in processed_fields:
             processed_fields["User FIO"] = processed_fields.pop("ФИО пользователя")
         if "E-mail пользователя" in processed_fields:
-            processed_fields["User email"] = processed_fields.pop("E-mail пользователя") 
+            processed_fields["User email"] = processed_fields.pop("E-mail пользователя")
+        if "Сконвертирован" in processed_fields:
+            processed_fields["Converted"] = processed_fields.pop("Сконвертирован") 
         row.update(processed_fields)
 
         return row
