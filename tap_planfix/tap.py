@@ -5,11 +5,7 @@ from typing import List
 from singer_sdk import Tap, Stream
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_planfix.streams import (
-    PlanfixStream,
-    ContactsStream,
-    TasksStream
-)
+from tap_planfix.streams import PlanfixStream, ContactsStream, TasksStream
 
 STREAM_TYPES = [
     ContactsStream,
@@ -19,6 +15,7 @@ STREAM_TYPES = [
 
 class TapPlanfix(Tap):
     """Planfix tap class."""
+
     name = "tap-planfix"
 
     config_jsonschema = th.PropertiesList(
@@ -26,10 +23,8 @@ class TapPlanfix(Tap):
             "planfiix_url",
             th.StringType,
         ),
-        th.Property(
-            "planfix_token",
-            th.StringType
-        )
+        th.Property("planfix_token", th.StringType),
+        th.Property("start_date", th.DateType),
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
