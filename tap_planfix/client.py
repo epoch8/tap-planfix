@@ -18,15 +18,14 @@ class PlanfixStream(RESTStream):
 
     @property
     def url_base(self) -> str:
-        return self.config.get("planfix_url") # type: ignore
+        return self.config.get("planfix_url")  # type: ignore
 
     @property
     def authenticator(self) -> BearerTokenAuthenticator:
         """Return a new authenticator object."""
         return BearerTokenAuthenticator.create_for_stream(
-            self, token=self.config.get("planfix_token") # type: ignore
+            self, token=self.config.get("planfix_token")  # type: ignore
         )
-    
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]
