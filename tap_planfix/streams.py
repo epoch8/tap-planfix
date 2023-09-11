@@ -43,6 +43,14 @@ class ContactsStream(PlanfixStream):
         th.Property("Contact person", th.StringType),
     ).to_dict()  # type: ignore
 
+    fields_name_map = {
+        "UTM разметка": "UTM markup",
+        "Язык пользовательского интерфейса": "User interface language",
+        "Лид (для аналитики)": "Lead (for analytics)",
+        'Дата перехода в "Лид"+45д': "Transition date to Lead+45d",
+        "Дата посл сообщения +15д": "Date of last message +15d",
+    }
+
     def prepare_request_payload(
         self, context: Optional[dict], next_page_token: Optional[Any]
     ) -> Optional[dict]:
@@ -55,45 +63,6 @@ class ContactsStream(PlanfixStream):
 
         return payload
 
-    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
-        if not row.get("customFieldData"):
-            return row
-        custom_fields = row.pop("customFieldData")
-        processed_fields = {}
-        for field in custom_fields:
-            if (
-                isinstance(field["value"], dict)
-                and field["value"].get("datetime") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
-            elif (
-                isinstance(field["value"], dict) and field["value"].get("value") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["value"]
-            else:
-                processed_fields[(field["field"])["name"]] = field["value"]
-        if "UTM разметка" in processed_fields:
-            processed_fields["UTM markup"] = processed_fields.pop("UTM разметка")
-        if "Язык пользовательского интерфейса" in processed_fields:
-            processed_fields["User interface language"] = processed_fields.pop(
-                "Язык пользовательского интерфейса"
-            )
-        if "Лид (для аналитики)" in processed_fields:
-            processed_fields["Lead (for analytics)"] = processed_fields.pop(
-                "Лид (для аналитики)"
-            )
-        if 'Дата перехода в "Лид"+45д' in processed_fields:
-            processed_fields["Transition date to Lead+45d"] = processed_fields.pop(
-                'Дата перехода в "Лид"+45д'
-            )
-        if "Дата посл сообщения +15д" in processed_fields:
-            processed_fields["Date of last message +15d"] = processed_fields.pop(
-                "Дата посл сообщения +15д"
-            )
-        row.update(processed_fields)
-
-        return row
-
 
 class TasksStream(PlanfixStream):
     name = "planfix_tasks"
@@ -101,45 +70,6 @@ class TasksStream(PlanfixStream):
     primary_keys = ["id"]  # type: ignore
     replication_key = "updated_at"  # type: ignore
     records_jsonpath = "$.tasks[*]"
-
-    def get_next_page_token(self, response, previous_token):
-        """Return a token for identifying next page or None if no more pages."""
-        results = response.json()
-
-        if not results or not results["tasks"]:
-            return None
-
-        next_page_token = (
-            previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
-        )
-        return next_page_token
-
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-        starting_timestamp = (
-            self.get_starting_timestamp(context) or self.config["start_date"]
-        )
-
-        payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
-            "filters": [
-                {
-                    "type": 103,
-                    "operator": "gt",
-                    "value": {
-                        "dateType": "otherDate",
-                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
-                    },
-                    "field": 48148,
-                }
-            ],
-            "fields": "id,name,48148,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582,47864,47656,47658,47660,47662,47876,47306,47344,47364,47520,47522",
-        }
-
-        return payload
-
     schema = th.PropertiesList(
         th.Property("id", th.IntegerType, description=""),
         th.Property("name", th.StringType, description=""),
@@ -180,51 +110,43 @@ class TasksStream(PlanfixStream):
         th.Property("User email", th.StringType),
     ).to_dict()  # type: ignore
 
-    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
-        if not row.get("customFieldData"):
-            return row
-        custom_fields = row.pop("customFieldData")
-        processed_fields = {}
-        for field in custom_fields:
-            if (
-                isinstance(field["value"], dict)
-                and field["value"].get("datetime") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
-            elif (
-                isinstance(field["value"], dict) and field["value"].get("value") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["value"]
-            else:
-                processed_fields[(field["field"])["name"]] = field["value"]
-        if "Страна" in processed_fields:
-            processed_fields["Country"] = processed_fields.pop("Страна")
-        if "Промокод" in processed_fields:
-            processed_fields["Promocode"] = processed_fields.pop("Промокод")
-        if "Дата предоплаты" in processed_fields:
-            processed_fields["Prepayment date"] = processed_fields.pop(
-                "Дата предоплаты"
-            )
-        if "Дата отмены бронирования" in processed_fields:
-            processed_fields["Booking canceling date"] = processed_fields.pop(
-                "Дата отмены бронирования"
-            )
-        if "Дата и время перехода в статус" in processed_fields:
-            processed_fields[
-                "Date and time of transition to status"
-            ] = processed_fields.pop("Дата и время перехода в статус")
-        if "Стоимость лида (приоритетность)" in processed_fields:
-            processed_fields["Cost per lead (priority)"] = processed_fields.pop(
-                "Стоимость лида (приоритетность)"
-            )
-        if "ФИО пользователя" in processed_fields:
-            processed_fields["User FIO"] = processed_fields.pop("ФИО пользователя")
-        if "E-mail пользователя" in processed_fields:
-            processed_fields["User email"] = processed_fields.pop("E-mail пользователя")
-        if "Сконвертирован" in processed_fields:
-            processed_fields["Converted"] = processed_fields.pop("Сконвертирован")
-        row.update(processed_fields)
-        return row
+    fields_name_map = {
+        "Страна": "Country",
+        "Промокод": "Promocode",
+        "Дата предоплаты": "Prepayment date",
+        "Дата отмены бронирования": "Booking canceling date",
+        "Дата и время перехода в статус": "Date and time of transition to status",
+        "Стоимость лида (приоритетность)": "Cost per lead (priority)",
+        "ФИО пользователя": "User FIO",
+        "E-mail пользователя": "User email",
+        "Сконвертирован": "Converted",
+    }
+
+    def prepare_request_payload(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Optional[dict]:
+        starting_timestamp = (
+            self.get_starting_timestamp(context) or self.config["start_date"]
+        )
+
+        payload = {
+            "offset": next_page_token,
+            "pageSize": self.PAGE_SIZE,
+            "filters": [
+                {
+                    "type": 103,
+                    "operator": "gt",
+                    "value": {
+                        "dateType": "otherDate",
+                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
+                    },
+                    "field": 48148,
+                }
+            ],
+            "fields": "id,name,48148,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582,47864,47656,47658,47660,47662,47876,47306,47344,47364,47520,47522",
+        }
+
+        return payload
 
 
 class CashInflowStream(PlanfixStream):
@@ -233,18 +155,25 @@ class CashInflowStream(PlanfixStream):
     primary_keys = ["key"]  # type: ignore
     replication_key = "created_at"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
+    schema = th.PropertiesList(
+        th.Property("dataTag", th.StringType, description=""),
+        th.Property("key", th.IntegerType, description=""),
+        th.Property("created_at", th.DateTimeType, description=""),
+        th.Property("Sum", th.StringType),
+        th.Property("Currency", th.StringType),
+        th.Property("Exchange_rate", th.StringType),
+        th.Property("Sum_rub", th.StringType),
+        th.Property("Gateway", th.StringType),
+    ).to_dict()  # type: ignore
 
-    def get_next_page_token(self, response, previous_token):
-        """Return a token for identifying next page or None if no more pages."""
-        results = response.json()
-
-        if not results or not results["dataTagEntries"]:
-            return None
-
-        next_page_token = (
-            previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
-        )
-        return next_page_token
+    fields_name_map = {
+        "Сумма": "Sum",
+        "Валюта": "Currency",
+        "Курс": "Exchange_rate",
+        "Дата и время": "created_at",
+        "Сумма, РУБ": "Sum_rub",
+        "Шлюз": "Gateway",
+    }
 
     def prepare_request_payload(
         self, context: Optional[dict], next_page_token: Optional[Any]
@@ -272,49 +201,6 @@ class CashInflowStream(PlanfixStream):
 
         return payload
 
-    schema = th.PropertiesList(
-        th.Property("dataTag", th.StringType, description=""),
-        th.Property("key", th.IntegerType, description=""),
-        th.Property("created_at", th.DateTimeType, description=""),
-        th.Property("Sum", th.StringType),
-        th.Property("Currency", th.StringType),
-        th.Property("Exchange_rate", th.StringType),
-        th.Property("Sum_rub", th.StringType),
-        th.Property("Gateway", th.StringType),
-    ).to_dict()  # type: ignore
-
-    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
-        if not row.get("customFieldData"):
-            return row
-        custom_fields = row.pop("customFieldData")
-        processed_fields = {}
-        for field in custom_fields:
-            if (
-                isinstance(field["value"], dict)
-                and field["value"].get("datetime") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
-            elif (
-                isinstance(field["value"], dict) and field["value"].get("value") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["value"]
-            else:
-                processed_fields[(field["field"])["name"]] = field["value"]
-        if "Сумма" in processed_fields:
-            processed_fields["Sum"] = processed_fields.pop("Сумма")
-        if "Валюта" in processed_fields:
-            processed_fields["Currency"] = processed_fields.pop("Валюта")
-        if "Курс" in processed_fields:
-            processed_fields["Exchange_rate"] = processed_fields.pop("Курс")
-        if "Дата и время" in processed_fields:
-            processed_fields["created_at"] = processed_fields.pop("Дата и время")
-        if "Сумма, РУБ" in processed_fields:
-            processed_fields["Sum_rub"] = processed_fields.pop("Сумма, РУБ")
-        if "Шлюз" in processed_fields:
-            processed_fields["Gateway"] = processed_fields.pop("Шлюз")
-        row.update(processed_fields)
-        return row
-
 
 class CompletedRequestsStream(PlanfixStream):
     name = "planfix_completed_request"
@@ -322,18 +208,35 @@ class CompletedRequestsStream(PlanfixStream):
     primary_keys = ["key"]  # type: ignore
     replication_key = "Finished_at_datetime"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
+    schema = th.PropertiesList(
+        th.Property("dataTag", th.StringType),
+        th.Property("key", th.IntegerType),
+        th.Property("Executor", th.StringType),
+        th.Property("New_request_datetime", th.DateTimeType),
+        th.Property("First_response_datetime", th.DateTimeType),
+        th.Property("Finished_at_datetime", th.DateTimeType),
+        th.Property("Transition_to_feedback_datetime", th.DateTimeType),
+        th.Property("Score", th.StringType),
+        th.Property("Subject", th.StringType),
+        th.Property("Priority", th.StringType),
+        th.Property("Result", th.StringType),
+        th.Property("Analytics_created_at_datetime", th.DateTimeType),
+        th.Property("Prefix", th.StringType),
+    ).to_dict()  # type: ignore
 
-    def get_next_page_token(self, response, previous_token):
-        """Return a token for identifying next page or None if no more pages."""
-        results = response.json()
-
-        if not results or not results["dataTagEntries"]:
-            return None
-
-        next_page_token = (
-            previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
-        )
-        return next_page_token
+    fields_name_map = {
+        "Исполнитель": "Executor",
+        "Дата и время нового обращения": "New_request_datetime",
+        "Дата и время первого ответа": "First_response_datetime",
+        "Дата и время завершения": "Finished_at_datetime",
+        "Дата и время перехода в Обратную связь": "Transition_to_feedback_datetime",
+        "Оценка": "Score",
+        "Тематика обращения": "Subject",
+        "Приоритет": "Priority",
+        "Результат выполнения": "Result",
+        "Дата и время создания аналитики": "Analytics_created_at_datetime",
+        "Префикс": "Prefix",
+    }
 
     def prepare_request_payload(
         self, context: Optional[dict], next_page_token: Optional[Any]
@@ -361,74 +264,6 @@ class CompletedRequestsStream(PlanfixStream):
 
         return payload
 
-    schema = th.PropertiesList(
-        th.Property("dataTag", th.StringType),
-        th.Property("key", th.IntegerType),
-        th.Property("Executor", th.StringType),
-        th.Property("New_request_datetime", th.DateTimeType),
-        th.Property("First_response_datetime", th.DateTimeType),
-        th.Property("Finished_at_datetime", th.DateTimeType),
-        th.Property("Transition_to_feedback_datetime", th.DateTimeType),
-        th.Property("Score", th.StringType),
-        th.Property("Subject", th.StringType),
-        th.Property("Priority", th.StringType),
-        th.Property("Result", th.StringType),
-        th.Property("Analytics_created_at_datetime", th.DateTimeType),
-        th.Property("Prefix", th.StringType),
-    ).to_dict()  # type: ignore
-
-    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
-        if not row.get("customFieldData"):
-            return row
-        custom_fields = row.pop("customFieldData")
-        processed_fields = {}
-        for field in custom_fields:
-            if (
-                isinstance(field["value"], dict)
-                and field["value"].get("datetime") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
-            elif (
-                isinstance(field["value"], dict) and field["value"].get("value") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["value"]
-            else:
-                processed_fields[(field["field"])["name"]] = field["value"]
-        if "Исполнитель" in processed_fields:
-            processed_fields["Executor"] = processed_fields.pop("Исполнитель")
-        if "Дата и время нового обращения" in processed_fields:
-            processed_fields["New_request_datetime"] = processed_fields.pop(
-                "Дата и время нового обращения"
-            )
-        if "Дата и время первого ответа" in processed_fields:
-            processed_fields["First_response_datetime"] = processed_fields.pop(
-                "Дата и время первого ответа"
-            )
-        if "Дата и время завершения" in processed_fields:
-            processed_fields["Finished_at_datetime"] = processed_fields.pop(
-                "Дата и время завершения"
-            )
-        if "Дата и время перехода в Обратную связь" in processed_fields:
-            processed_fields["Transition_to_feedback_datetime"] = processed_fields.pop(
-                "Дата и время перехода в Обратную связь"
-            )
-        if "Оценка" in processed_fields:
-            processed_fields["Score"] = processed_fields.pop("Оценка")
-        if "Тематика обращения" in processed_fields:
-            processed_fields["Subject"] = processed_fields.pop("Тематика обращения")
-        if "Приоритет" in processed_fields:
-            processed_fields["Priority"] = processed_fields.pop("Приоритет")
-        if "Результат выполнения" in processed_fields:
-            processed_fields["Result"] = processed_fields.pop("Результат выполнения")
-        if "Дата и время создания аналитики" in processed_fields:
-            processed_fields["Analytics_created_at_datetime"] = processed_fields.pop(
-                "Дата и время создания аналитики"
-            )
-        if "Префикс" in processed_fields:
-            processed_fields["Prefix"] = processed_fields.pop("Префикс")
-        row.update(processed_fields)
-        return row
-
 
 class FirstResponseStream(PlanfixStream):
     name = "planfix_first_response"
@@ -436,18 +271,23 @@ class FirstResponseStream(PlanfixStream):
     primary_keys = ["key"]  # type: ignore
     replication_key = "First_response_datetime"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
+    schema = th.PropertiesList(
+        th.Property("dataTag", th.StringType),
+        th.Property("key", th.IntegerType),
+        th.Property("Executor", th.StringType),
+        th.Property("Request_datetime", th.DateTimeType),
+        th.Property("First_response_datetime", th.DateTimeType),
+        th.Property("Request_type", th.StringType),
+        th.Property("Prefix", th.StringType),
+    ).to_dict()  # type: ignore
 
-    def get_next_page_token(self, response, previous_token):
-        """Return a token for identifying next page or None if no more pages."""
-        results = response.json()
-
-        if not results or not results["dataTagEntries"]:
-            return None
-
-        next_page_token = (
-            previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
-        )
-        return next_page_token
+    fields_name_map = {
+        "Исполнитель": "Executor",
+        "Дата обращения": "Request_datetime",
+        "Дата первого ответа": "First_response_datetime",
+        "Тип обращения": "Request_type",
+        "Префикс": "Prefix",
+    }
 
     def prepare_request_payload(
         self, context: Optional[dict], next_page_token: Optional[Any]
@@ -475,46 +315,47 @@ class FirstResponseStream(PlanfixStream):
 
         return payload
 
+
+class TaskAcceptanceStream(PlanfixStream):
+    name = "planfix_task_acceptance"
+    path = "/datatag/7092/entry/list"
+    primary_keys = ["key"]  # type: ignore
+    replication_key = "Acceptance_datetime"  # type: ignore
+    records_jsonpath = "$.dataTagEntries[*]"
     schema = th.PropertiesList(
         th.Property("dataTag", th.StringType),
         th.Property("key", th.IntegerType),
-        th.Property("Executor", th.StringType),
-        th.Property("Request_datetime", th.DateTimeType),
-        th.Property("First_response_datetime", th.DateTimeType),
-        th.Property("Request_type", th.StringType),
-        th.Property("Prefix", th.StringType),
+        th.Property("Acceptance_datetime", th.DateTimeType),
+        th.Property("Accepted_employee", th.StringType),
     ).to_dict()  # type: ignore
 
-    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
-        if not row.get("customFieldData"):
-            return row
-        custom_fields = row.pop("customFieldData")
-        processed_fields = {}
-        for field in custom_fields:
-            if (
-                isinstance(field["value"], dict)
-                and field["value"].get("datetime") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
-            elif (
-                isinstance(field["value"], dict) and field["value"].get("value") != None
-            ):
-                processed_fields[(field["field"])["name"]] = field["value"]["value"]
-            else:
-                processed_fields[(field["field"])["name"]] = field["value"]
-        if "Исполнитель" in processed_fields:
-            processed_fields["Executor"] = processed_fields.pop("Исполнитель")
-        if "Дата обращения" in processed_fields:
-            processed_fields["Request_datetime"] = processed_fields.pop(
-                "Дата обращения"
-            )
-        if "Дата первого ответа" in processed_fields:
-            processed_fields["First_response_datetime"] = processed_fields.pop(
-                "Дата первого ответа"
-            )
-        if "Тип обращения" in processed_fields:
-            processed_fields["Request_type"] = processed_fields.pop("Тип обращения")
-        if "Префикс" in processed_fields:
-            processed_fields["Prefix"] = processed_fields.pop("Префикс")
-        row.update(processed_fields)
-        return row
+    fields_name_map = {
+        "Принявший сотрудник": "Accepted_employee",
+        "Дата и Время принятия": "Acceptance_datetime",
+    }
+
+    def prepare_request_payload(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Optional[dict]:
+        starting_timestamp = (
+            self.get_starting_timestamp(context) or self.config["start_date"]
+        )
+
+        payload = {
+            "offset": next_page_token,
+            "pageSize": self.PAGE_SIZE,
+            "filters": [
+                {
+                    "type": 3101,
+                    "operator": "gt",
+                    "value": {
+                        "dateType": "otherDate",
+                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
+                    },
+                    "field": 30308,
+                }
+            ],
+            "fields": "dataTag,key,30308,30310",
+        }
+
+        return payload
