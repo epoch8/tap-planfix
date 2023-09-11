@@ -24,7 +24,10 @@ class PlanfixStream(RESTStream):
 
     rest_method = "POST"
     PAGE_SIZE = 100
+    fields = ""
     fields_name_map = {}
+    filter_field_type_id = 0
+    filter_field_id = 0
 
     def __init__(
         self,
@@ -46,6 +49,36 @@ class PlanfixStream(RESTStream):
         return BearerTokenAuthenticator.create_for_stream(
             self, token=self.config.get("planfix_token")  # type: ignore
         )
+
+    def prepare_request_payload(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Optional[dict]:
+        starting_timestamp = (
+            self.get_starting_timestamp(context) or self.config["start_date"]
+        )
+
+        payload = {
+            "offset": next_page_token,
+            "pageSize": self.PAGE_SIZE,
+            "fields": self.fields,
+        }
+
+        if self.replication_key:
+            filters = {
+                "filters": [
+                    {
+                        "type": self.filter_field_type_id,
+                        "operator": "gt",
+                        "value": {
+                            "dateType": "otherDate",
+                            "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
+                        },
+                        "field": self.filter_field_id,
+                    }
+                ]
+            }
+            payload.update(filters)
+        return payload
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]

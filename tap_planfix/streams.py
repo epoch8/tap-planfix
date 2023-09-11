@@ -13,7 +13,14 @@ class ContactsStream(PlanfixStream):
     path = "/contact/list"
     primary_keys = ["id"]  # type: ignore
     records_jsonpath = "$.contacts[*]"
-
+    fields = "id,name,lastname,email,phones,47368,47376,47378,47666,47676,47682,47918,47920,47924,47932,47938"
+    fields_name_map = {
+        "UTM разметка": "UTM markup",
+        "Язык пользовательского интерфейса": "User interface language",
+        "Лид (для аналитики)": "Lead (for analytics)",
+        'Дата перехода в "Лид"+45д': "Transition date to Lead+45d",
+        "Дата посл сообщения +15д": "Date of last message +15d",
+    }
     schema = th.PropertiesList(
         th.Property("id", th.IntegerType, description=""),
         th.Property("name", th.StringType, description=""),
@@ -43,26 +50,6 @@ class ContactsStream(PlanfixStream):
         th.Property("Contact person", th.StringType),
     ).to_dict()  # type: ignore
 
-    fields_name_map = {
-        "UTM разметка": "UTM markup",
-        "Язык пользовательского интерфейса": "User interface language",
-        "Лид (для аналитики)": "Lead (for analytics)",
-        'Дата перехода в "Лид"+45д': "Transition date to Lead+45d",
-        "Дата посл сообщения +15д": "Date of last message +15d",
-    }
-
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-
-        payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
-            "fields": "id,name,lastname,email,phones,47368,47376,47378,47666,47676,47682,47918,47920,47924,47932,47938",
-        }
-
-        return payload
-
 
 class TasksStream(PlanfixStream):
     name = "planfix_tasks"
@@ -70,6 +57,21 @@ class TasksStream(PlanfixStream):
     primary_keys = ["id"]  # type: ignore
     replication_key = "updated_at"  # type: ignore
     records_jsonpath = "$.tasks[*]"
+    fields = "id,name,48148,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582,47864,47656,47658,47660,47662,47876,47306,47344,47364,47520,47522"
+    filter_field_type_id = 103
+    filter_field_id = 48148
+    fields_name_map = {
+        "Страна": "Country",
+        "Промокод": "Promocode",
+        "Дата предоплаты": "Prepayment date",
+        "Дата отмены бронирования": "Booking canceling date",
+        "Дата и время перехода в статус": "Date and time of transition to status",
+        "Стоимость лида (приоритетность)": "Cost per lead (priority)",
+        "ФИО пользователя": "User FIO",
+        "E-mail пользователя": "User email",
+        "Сконвертирован": "Converted",
+    }
+
     schema = th.PropertiesList(
         th.Property("id", th.IntegerType, description=""),
         th.Property("name", th.StringType, description=""),
@@ -110,44 +112,6 @@ class TasksStream(PlanfixStream):
         th.Property("User email", th.StringType),
     ).to_dict()  # type: ignore
 
-    fields_name_map = {
-        "Страна": "Country",
-        "Промокод": "Promocode",
-        "Дата предоплаты": "Prepayment date",
-        "Дата отмены бронирования": "Booking canceling date",
-        "Дата и время перехода в статус": "Date and time of transition to status",
-        "Стоимость лида (приоритетность)": "Cost per lead (priority)",
-        "ФИО пользователя": "User FIO",
-        "E-mail пользователя": "User email",
-        "Сконвертирован": "Converted",
-    }
-
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-        starting_timestamp = (
-            self.get_starting_timestamp(context) or self.config["start_date"]
-        )
-
-        payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
-            "filters": [
-                {
-                    "type": 103,
-                    "operator": "gt",
-                    "value": {
-                        "dateType": "otherDate",
-                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
-                    },
-                    "field": 48148,
-                }
-            ],
-            "fields": "id,name,48148,47184,47234,47390,47680,47556,47602,47208,47210,47212,47224,47228,47238,47240,47242,47246,47248,47252,47268,47270,47294,47296,47300,47582,47864,47656,47658,47660,47662,47876,47306,47344,47364,47520,47522",
-        }
-
-        return payload
-
 
 class CashInflowStream(PlanfixStream):
     name = "planfix_cash_in"
@@ -155,6 +119,17 @@ class CashInflowStream(PlanfixStream):
     primary_keys = ["key"]  # type: ignore
     replication_key = "created_at"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
+    fields = "dataTag,key,30008,30010,30012,30014,30016,30018"
+    filter_field_type_id = 3101
+    filter_field_id = 30008
+    fields_name_map = {
+        "Сумма": "Sum",
+        "Валюта": "Currency",
+        "Курс": "Exchange_rate",
+        "Дата и время": "created_at",
+        "Сумма, РУБ": "Sum_rub",
+        "Шлюз": "Gateway",
+    }
     schema = th.PropertiesList(
         th.Property("dataTag", th.StringType, description=""),
         th.Property("key", th.IntegerType, description=""),
@@ -166,41 +141,6 @@ class CashInflowStream(PlanfixStream):
         th.Property("Gateway", th.StringType),
     ).to_dict()  # type: ignore
 
-    fields_name_map = {
-        "Сумма": "Sum",
-        "Валюта": "Currency",
-        "Курс": "Exchange_rate",
-        "Дата и время": "created_at",
-        "Сумма, РУБ": "Sum_rub",
-        "Шлюз": "Gateway",
-    }
-
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-        starting_timestamp = (
-            self.get_starting_timestamp(context) or self.config["start_date"]
-        )
-
-        payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
-            "filters": [
-                {
-                    "type": 3101,
-                    "operator": "gt",
-                    "value": {
-                        "dateType": "otherDate",
-                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
-                    },
-                    "field": 30008,
-                }
-            ],
-            "fields": "dataTag,key,30008,30010,30012,30014,30016,30018",
-        }
-
-        return payload
-
 
 class CompletedRequestsStream(PlanfixStream):
     name = "planfix_completed_request"
@@ -208,6 +148,22 @@ class CompletedRequestsStream(PlanfixStream):
     primary_keys = ["key"]  # type: ignore
     replication_key = "Finished_at_datetime"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
+    fields = "dataTag,key,30094,30108,30096,30098,30348,30100,30262,30102,30104,30106,30110,30120"
+    filter_field_type_id = 3101
+    filter_field_id = 30098
+    fields_name_map = {
+        "Исполнитель": "Executor",
+        "Дата и время нового обращения": "New_request_datetime",
+        "Дата и время первого ответа": "First_response_datetime",
+        "Дата и время завершения": "Finished_at_datetime",
+        "Дата и время перехода в Обратную связь": "Transition_to_feedback_datetime",
+        "Оценка": "Score",
+        "Тематика обращения": "Subject",
+        "Приоритет": "Priority",
+        "Результат выполнения": "Result",
+        "Дата и время создания аналитики": "Analytics_created_at_datetime",
+        "Префикс": "Prefix",
+    }
     schema = th.PropertiesList(
         th.Property("dataTag", th.StringType),
         th.Property("key", th.IntegerType),
@@ -224,46 +180,6 @@ class CompletedRequestsStream(PlanfixStream):
         th.Property("Prefix", th.StringType),
     ).to_dict()  # type: ignore
 
-    fields_name_map = {
-        "Исполнитель": "Executor",
-        "Дата и время нового обращения": "New_request_datetime",
-        "Дата и время первого ответа": "First_response_datetime",
-        "Дата и время завершения": "Finished_at_datetime",
-        "Дата и время перехода в Обратную связь": "Transition_to_feedback_datetime",
-        "Оценка": "Score",
-        "Тематика обращения": "Subject",
-        "Приоритет": "Priority",
-        "Результат выполнения": "Result",
-        "Дата и время создания аналитики": "Analytics_created_at_datetime",
-        "Префикс": "Prefix",
-    }
-
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-        starting_timestamp = (
-            self.get_starting_timestamp(context) or self.config["start_date"]
-        )
-
-        payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
-            "filters": [
-                {
-                    "type": 3101,
-                    "operator": "gt",
-                    "value": {
-                        "dateType": "otherDate",
-                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
-                    },
-                    "field": 30098,
-                }
-            ],
-            "fields": "dataTag,key,30094,30108,30096,30098,30348,30100,30262,30102,30104,30106,30110,30120",
-        }
-
-        return payload
-
 
 class FirstResponseStream(PlanfixStream):
     name = "planfix_first_response"
@@ -271,6 +187,16 @@ class FirstResponseStream(PlanfixStream):
     primary_keys = ["key"]  # type: ignore
     replication_key = "First_response_datetime"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
+    fields = "dataTag,key,30112,30114,30116,30118,30220"
+    filter_field_type_id = 3101
+    filter_field_id = 30116
+    fields_name_map = {
+        "Исполнитель": "Executor",
+        "Дата обращения": "Request_datetime",
+        "Дата первого ответа": "First_response_datetime",
+        "Тип обращения": "Request_type",
+        "Префикс": "Prefix",
+    }
     schema = th.PropertiesList(
         th.Property("dataTag", th.StringType),
         th.Property("key", th.IntegerType),
@@ -281,40 +207,6 @@ class FirstResponseStream(PlanfixStream):
         th.Property("Prefix", th.StringType),
     ).to_dict()  # type: ignore
 
-    fields_name_map = {
-        "Исполнитель": "Executor",
-        "Дата обращения": "Request_datetime",
-        "Дата первого ответа": "First_response_datetime",
-        "Тип обращения": "Request_type",
-        "Префикс": "Prefix",
-    }
-
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-        starting_timestamp = (
-            self.get_starting_timestamp(context) or self.config["start_date"]
-        )
-
-        payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
-            "filters": [
-                {
-                    "type": 3101,
-                    "operator": "gt",
-                    "value": {
-                        "dateType": "otherDate",
-                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
-                    },
-                    "field": 30116,
-                }
-            ],
-            "fields": "dataTag,key,30112,30114,30116,30118,30220",
-        }
-
-        return payload
-
 
 class TaskAcceptanceStream(PlanfixStream):
     name = "planfix_task_acceptance"
@@ -322,40 +214,16 @@ class TaskAcceptanceStream(PlanfixStream):
     primary_keys = ["key"]  # type: ignore
     replication_key = "Acceptance_datetime"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
+    fields = "dataTag,key,30308,30310"
+    filter_field_type_id = 3101
+    filter_field_id = 30308
+    fields_name_map = {
+        "Принявший сотрудник": "Accepted_employee",
+        "Дата и Время принятия": "Acceptance_datetime",
+    }
     schema = th.PropertiesList(
         th.Property("dataTag", th.StringType),
         th.Property("key", th.IntegerType),
         th.Property("Acceptance_datetime", th.DateTimeType),
         th.Property("Accepted_employee", th.StringType),
     ).to_dict()  # type: ignore
-
-    fields_name_map = {
-        "Принявший сотрудник": "Accepted_employee",
-        "Дата и Время принятия": "Acceptance_datetime",
-    }
-
-    def prepare_request_payload(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Optional[dict]:
-        starting_timestamp = (
-            self.get_starting_timestamp(context) or self.config["start_date"]
-        )
-
-        payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
-            "filters": [
-                {
-                    "type": 3101,
-                    "operator": "gt",
-                    "value": {
-                        "dateType": "otherDate",
-                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
-                    },
-                    "field": 30308,
-                }
-            ],
-            "fields": "dataTag,key,30308,30310",
-        }
-
-        return payload
