@@ -222,3 +222,96 @@ class TasksStream(PlanfixStream):
             processed_fields["Converted"] = processed_fields.pop("Сконвертирован")
         row.update(processed_fields)
         return row
+
+class CashInflowStream(PlanfixStream):
+    name = "planfix_cash_in"
+    path = "/datatag/7052/entry/list"
+    primary_keys = ["key"]  # type: ignore
+    replication_key = "created_at" # type: ignore
+    records_jsonpath = "$.dataTagEntries[*]"
+
+    def get_next_page_token(self, response, previous_token):
+        """Return a token for identifying next page or None if no more pages."""
+        results = response.json()
+
+        if not results or not results["dataTagEntries"]:
+            return None
+
+        next_page_token = (
+            previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
+        )
+        return next_page_token
+
+    def prepare_request_payload(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Optional[dict]:
+        starting_timestamp = self.get_starting_timestamp(context) or self.config['start_date']
+
+        payload = {
+            "offset": next_page_token,
+            "pageSize": self.PAGE_SIZE,
+            "filters": [
+                {
+                    "type": 3101,
+                    "operator": "gt",
+                    "value": {"dateType": "otherDate", "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}"},
+                    "field": 30008,
+                }
+            ],
+            "fields": "dataTag,key,30008,30010,30012,30014,30016,30018"
+        }
+
+
+
+        return payload
+
+    schema = th.PropertiesList(
+        th.Property("dataTag", th.StringType, description=""),
+        th.Property("key", th.IntegerType, description=""),
+        th.Property("created_at", th.DateTimeType, description=""),
+        th.Property("Sum", th.StringType),
+        th.Property("Currency", th.StringType),
+        th.Property("Exchange_rate", th.StringType),
+        th.Property("Sum_rub", th.StringType),
+        th.Property("Gateway date", th.StringType),
+    ).to_dict()  # type: ignore
+
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+        if not row.get("customFieldData"):
+            return row
+        custom_fields = row.pop("customFieldData")
+        processed_fields = {}
+        for field in custom_fields:
+            if (
+                isinstance(field["value"], dict)
+                and field["value"].get("datetime") != None
+            ):
+                processed_fields[(field["field"])["name"]] = field["value"]["datetime"]
+            elif (
+                isinstance(field["value"], dict) and field["value"].get("value") != None
+            ):
+                processed_fields[(field["field"])["name"]] = field["value"]["value"]
+            else:
+                processed_fields[(field["field"])["name"]] = field["value"]
+        if "Сумма" in processed_fields:
+            processed_fields["Sum"] = processed_fields.pop("Сумма")
+        if "Валюта" in processed_fields:
+            processed_fields["Currency"] = processed_fields.pop("Валюта")
+        if "Курс" in processed_fields:
+            processed_fields["Exchange_rate"] = processed_fields.pop(
+                "Курс"
+            )
+        if "Дата и время" in processed_fields:
+            processed_fields["created_at"] = processed_fields.pop(
+                "Дата и время"
+            )
+        if "Сумма, РУБ" in processed_fields:
+            processed_fields[
+                "Sum_rub"
+            ] = processed_fields.pop("Сумма, РУБ")
+        if "Шлюз" in processed_fields:
+            processed_fields["Gateway"] = processed_fields.pop(
+                "Шлюз"
+            )
+        row.update(processed_fields)
+        return row
