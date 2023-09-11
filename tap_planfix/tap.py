@@ -5,11 +5,27 @@ from typing import List
 from singer_sdk import Tap, Stream
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_planfix.streams import PlanfixStream, ContactsStream, TasksStream
+from tap_planfix.streams import (
+    PlanfixStream,
+    ContactsStream,
+    TasksStream,
+    CashInflowStream,
+    CompletedRequestsStream,
+    FirstResponseStream,
+    TaskAcceptanceStream,
+    LeadsStream,
+    ContributionToDealStream,
+)
 
 STREAM_TYPES = [
     ContactsStream,
-    TasksStream
+    TasksStream,
+    CashInflowStream,
+    CompletedRequestsStream,
+    FirstResponseStream,
+    TaskAcceptanceStream,
+    LeadsStream,
+    ContributionToDealStream,
 ]
 
 

@@ -266,3 +266,27 @@ class LeadsStream(PlanfixStream):
         th.Property("Last_request_datetime", th.DateTimeType),
         th.Property("Last_request_dt", th.DateTimeType),
     ).to_dict()  # type: ignore
+
+
+class ContributionToDealStream(PlanfixStream):
+    name = "planfix_contribution_to_deal"
+    path = "/datatag/7100/entry/list"
+    primary_keys = ["key"]  # type: ignore
+    replication_key = "Push_datetime"  # type: ignore
+    records_jsonpath = "$.dataTagEntries[*]"
+    fields = "dataTag,key,30374,30370,30394"
+    filter_field_type_id = 3101
+    filter_field_id = 30374
+    fields_name_map = {
+        "Дата пуша": "Push_datetime",
+        "Исполнитель": "Executor",
+        "Вклад в сделку": "Contribution_to_deal",
+    }
+    schema = th.PropertiesList(
+        th.Property("dataTag", th.StringType),
+        th.Property("key", th.IntegerType),
+        th.Property("Executor", th.StringType),
+        th.Property("Contribution_to_deal", th.StringType),
+        th.Property("Push_datetime", th.DateTimeType),
+
+    ).to_dict()  # type: ignore
