@@ -227,3 +227,42 @@ class TaskAcceptanceStream(PlanfixStream):
         th.Property("Acceptance_datetime", th.DateTimeType),
         th.Property("Accepted_employee", th.StringType),
     ).to_dict()  # type: ignore
+
+
+class LeadsStream(PlanfixStream):
+    name = "planfix_leads"
+    path = "/datatag/7098/entry/list"
+    primary_keys = ["key"]  # type: ignore
+    replication_key = "Lead_creation_datetime"  # type: ignore
+    records_jsonpath = "$.dataTagEntries[*]"
+    fields = "dataTag,key,30350,30352,30382,30384,30386,30388,30398,30404,30362,30364,30366"
+    filter_field_type_id = 3101
+    filter_field_id = 30388
+    fields_name_map = {
+        "Исполнитель": "Executor",
+        "Лид": "Lead",
+        "Страна лида": "Lead_country",
+        "Почта лида": "Lead_mail",
+        "Телефон лида": "Lead_phone",
+        "Дата создания лида": "Lead_creation_datetime",
+        "Дата и время последнего обращения": "Last_request_datetime",
+        "Д и В последнего обращения": "Last_request_dt",
+        "Источник": "Source",
+        "Префикс": "Prefix",
+        "Язык пользовательского интерфейса": "UI_language",
+    }
+    schema = th.PropertiesList(
+        th.Property("dataTag", th.StringType),
+        th.Property("key", th.IntegerType),
+        th.Property("Executor", th.StringType),
+        th.Property("Lead", th.StringType),
+        th.Property("Lead_country", th.StringType),
+        th.Property("Lead_mail", th.StringType),
+        th.Property("Lead_phone", th.StringType),
+        th.Property("Source", th.StringType),
+        th.Property("Prefix", th.StringType),
+        th.Property("UI_language", th.StringType),
+        th.Property("Lead_creation_datetime", th.DateTimeType),
+        th.Property("Last_request_datetime", th.DateTimeType),
+        th.Property("Last_request_dt", th.DateTimeType),
+    ).to_dict()  # type: ignore
