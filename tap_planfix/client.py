@@ -32,9 +32,9 @@ class PlanfixStream(RESTStream):
     def __init__(
         self,
         tap: TapBaseClass,
-        name: str | None = None,
-        schema: Dict[str, Any] | Schema | None = None,
-        path: str | None = None,
+        name = None,
+        schema = None,
+        path = None,
     ) -> None:
         self.processed_fields = {}
         super().__init__(tap, name, schema, path)
