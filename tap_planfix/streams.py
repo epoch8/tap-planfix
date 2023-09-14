@@ -233,7 +233,7 @@ class LeadsStream(PlanfixStream):
     name = "planfix_leads"
     path = "/datatag/7098/entry/list"
     primary_keys = ["key"]  # type: ignore
-    replication_key = "Lead_creation_datetime"  # type: ignore
+    # replication_key = "Lead_creation_datetime"  # type: ignore
     records_jsonpath = "$.dataTagEntries[*]"
     fields = "dataTag,key,30350,30352,30382,30384,30386,30388,30398,30404,30362,30364,30366"
     filter_field_type_id = 3101
@@ -262,7 +262,7 @@ class LeadsStream(PlanfixStream):
         th.Property("Source", th.StringType),
         th.Property("Prefix", th.StringType),
         th.Property("UI_language", th.StringType),
-        th.Property("Lead_creation_datetime", th.DateTimeType),
+        th.Property("Lead_creation_datetime", th.StringType),
         th.Property("Last_request_datetime", th.DateTimeType),
         th.Property("Last_request_dt", th.DateTimeType),
     ).to_dict()  # type: ignore
