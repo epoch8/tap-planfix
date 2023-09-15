@@ -1,7 +1,4 @@
 """Stream type classes for tap-planfix."""
-from typing import Optional, Any
-from datetime import datetime
-import pendulum
 from singer_sdk import typing as th  # JSON Schema typing helpers
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 
@@ -288,5 +285,36 @@ class ContributionToDealStream(PlanfixStream):
         th.Property("Executor", th.StringType),
         th.Property("Contribution_to_deal", th.StringType),
         th.Property("Push_datetime", th.DateTimeType),
+
+    ).to_dict()  # type: ignore
+
+
+class PingsStream(PlanfixStream):
+    name = "planfix_pings"
+    path = "/datatag/7086/entry/list"
+    primary_keys = ["key"]  # type: ignore
+    records_jsonpath = "$.dataTagEntries[*]"
+    fields = "dataTag,key,30312,30326,30328,30330,30332,30334,30336,30324"
+    fields_name_map = {
+        "Путешественник": "Traveler",
+        "Дата создания Лида": "Lead_creation_datetime",
+        "Дата 15мин пинг": "15_min_ping_datetime",
+        "Дата 1 пинга": "1_ping_datetime",
+        "Дата 2 пинга": "2_ping_datetime",
+        "Дата 3 пинга": "3_ping_datetime",
+        "Дата конверсии": "Conversion_datetime",
+        "Дата снятия метки \"Лид\"": "Lead_removed_datetime",
+    }
+    schema = th.PropertiesList(
+        th.Property("dataTag", th.StringType),
+        th.Property("key", th.IntegerType),
+        th.Property("Traveler", th.StringType),
+        th.Property("Lead_creation_datetime", th.DateTimeType),
+        th.Property("15_min_ping_datetime", th.DateTimeType),
+        th.Property("1_ping_datetime", th.DateTimeType),
+        th.Property("2_ping_datetime", th.DateTimeType),
+        th.Property("3_ping_datetime", th.DateTimeType),
+        th.Property("Conversion_datetime", th.DateTimeType),
+        th.Property("Lead_removed_datetime", th.DateTimeType),
 
     ).to_dict()  # type: ignore

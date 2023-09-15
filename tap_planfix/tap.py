@@ -15,6 +15,7 @@ from tap_planfix.streams import (
     TaskAcceptanceStream,
     LeadsStream,
     ContributionToDealStream,
+    PingsStream
 )
 
 STREAM_TYPES = [
@@ -26,6 +27,7 @@ STREAM_TYPES = [
     TaskAcceptanceStream,
     LeadsStream,
     ContributionToDealStream,
+    PingsStream
 ]
 
 
