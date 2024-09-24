@@ -103,20 +103,17 @@ class PlanfixStream(RESTStream):
         custom_fields = row.pop("customFieldData")
         for field in custom_fields:
             if (
-                isinstance(field["value"], dict)
-                and field["value"].get("datetime") != None
+                isinstance(field.get("value", {}), dict)
+                and field.get("value", {}).get("datetime") != None
             ):
-                self.processed_fields[(field["field"])["name"]] = field["value"][
-                    "datetime"
-                ]
+                self.processed_fields[field.get("field", {}).get("name", "datetime")] = field.get("value", {}).get("datetime")
             elif (
-                isinstance(field["value"], dict) and field["value"].get("value") != None
+                isinstance(field.get("value", {}), dict)
+                and field.get("value", {}).get("value") != None
             ):
-                self.processed_fields[(field["field"])["name"]] = field["value"][
-                    "value"
-                ]
+                self.processed_fields[field.get("field", {}).get("name", "value")] = field.get("value", {}).get("value")
             else:
-                self.processed_fields[(field["field"])["name"]] = field["value"]
+                self.processed_fields[field.get("field", {}).get("name", "name")] = field.get("value")
 
         for russian, english in self.fields_name_map.items():
             if russian in self.processed_fields:
