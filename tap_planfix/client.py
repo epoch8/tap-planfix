@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Union, List, Iterable, cast
 import pendulum
 from datetime import date, datetime
 from singer.schema import Schema
+import logging
 
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.plugin_base import PluginBase as TapBaseClass
@@ -81,6 +82,10 @@ class PlanfixStream(RESTStream):
                 ]
             }
             payload.update(filters)
+        
+        logger = logging.getLogger(__name__)
+        logger.info(msg=f"Request payload:\n{payload}")
+
         return payload
 
     def get_next_page_token(
