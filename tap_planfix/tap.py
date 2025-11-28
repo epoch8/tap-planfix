@@ -6,28 +6,13 @@ from singer_sdk import Tap, Stream
 from singer_sdk import typing as th  # JSON schema typing helpers
 
 from tap_planfix.streams import (
-    PlanfixStream,
     ContactsStream,
     TasksStream,
-    CashInflowStream,
-    CompletedRequestsStream,
-    FirstResponseStream,
-    TaskAcceptanceStream,
-    LeadsStream,
-    ContributionToDealStream,
-    PingsStream
 )
 
 STREAM_TYPES = [
     ContactsStream,
     TasksStream,
-    CashInflowStream,
-    CompletedRequestsStream,
-    FirstResponseStream,
-    TaskAcceptanceStream,
-    LeadsStream,
-    ContributionToDealStream,
-    PingsStream
 ]
 
 
@@ -37,12 +22,10 @@ class TapPlanfix(Tap):
     name = "tap-planfix"
 
     config_jsonschema = th.PropertiesList(
-        th.Property(
-            "planfiix_url",
-            th.StringType,
-        ),
-        th.Property("planfix_token", th.StringType),
-        th.Property("start_date", th.DateType),
+        th.Property("planfix_url", th.StringType, required=True),
+        th.Property("planfix_token", th.StringType, required=True),
+        th.Property("start_date", th.DateType, required=False),
+        th.Property("page_size", th.IntegerType, required=False, default=100),
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:

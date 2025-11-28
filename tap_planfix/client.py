@@ -1,9 +1,10 @@
 """REST client handling, including PlanfixStream base class."""
 
 import requests
-from typing import Any, Dict, Optional, Union, List, Iterable, cast
+import backoff
+from typing import Any, Dict, Optional, Union, List, Iterable, cast, Generator
 import pendulum
-from datetime import date, datetime
+import datetime
 from singer.schema import Schema
 import logging
 
@@ -27,11 +28,13 @@ class PlanfixStream(RESTStream):
     """Planfix stream class."""
 
     rest_method = "POST"
-    PAGE_SIZE = 100
+    filters = []
     fields = ""
     fields_name_map = {}
     filter_field_type_id = 0
     filter_field_id = 0
+    offset = 0
+    logger = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -57,34 +60,32 @@ class PlanfixStream(RESTStream):
     def prepare_request_payload(
         self, context: Optional[dict], next_page_token: Optional[Any]
     ) -> Optional[dict]:
-        starting_timestamp = (
-            self.get_starting_timestamp(context) or self.config["start_date"]
-        )
-
+        
         payload = {
-            "offset": next_page_token,
-            "pageSize": self.PAGE_SIZE,
+            "offset": next_page_token or self.offset,
+            "pageSize": self.config.get("page_size"),
+            "filters": self.filters,
             "fields": self.fields,
         }
 
-        if self.replication_key:
-            filters = {
-                "filters": [
-                    {
-                        "type": self.filter_field_type_id,
-                        "operator": "gt",
-                        "value": {
-                            "dateType": "otherDate",
-                            "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
-                        },
-                        "field": self.filter_field_id,
-                    }
-                ]
-            }
-            payload.update(filters)
+        if self.replication_key and self.config.get("start_date"):
+            starting_timestamp = (
+                self.get_starting_timestamp(context) or self.config["start_date"]
+            )
+            
+            payload["filters"].append(
+                {
+                    "type": self.filter_field_type_id,
+                    "operator": "gt",
+                    "value": {
+                        "dateType": "otherDate",
+                        "dateValue": f"{starting_timestamp.strftime('%d-%m-%Y')}",
+                    },
+                    "field": self.filter_field_id,
+                }
+            )
         
-        logger = logging.getLogger(__name__)
-        logger.info(msg=f"Request payload:\n{payload}")
+        self.logger.info(msg=f"Request payload:\n{payload}")
 
         return payload
 
@@ -98,35 +99,42 @@ class PlanfixStream(RESTStream):
             return None
 
         next_page_token = (
-            previous_token + self.PAGE_SIZE if previous_token else self.PAGE_SIZE
+            previous_token + self.config.get("page_size") if previous_token else self.config.get("page_size")
         )
+        self.offset = next_page_token
         return next_page_token
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         yield from extract_jsonpath(self.records_jsonpath, input=response.json())
 
     def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
-        if not row.get("customFieldData"):
-            return row
-        custom_fields = row.pop("customFieldData")
-        for field in custom_fields:
-            if (
-                isinstance(field.get("value", {}), dict)
-                and field.get("value", {}).get("datetime") != None
-            ):
-                self.processed_fields[field.get("field", {}).get("name", "datetime")] = field.get("value", {}).get("datetime")
-            elif (
-                isinstance(field.get("value", {}), dict)
-                and field.get("value", {}).get("value") != None
-            ):
-                self.processed_fields[field.get("field", {}).get("name", "value")] = field.get("value", {}).get("value")
-            else:
-                self.processed_fields[field.get("field", {}).get("name", "name")] = field.get("value")
+
+        if row.get("customFieldData"):
+            custom_fields = row.pop("customFieldData")
+
+            for field in custom_fields:
+                if (
+                    isinstance(field.get("value", {}), dict)
+                    and field.get("value", {}).get("datetime") is not None
+                ):
+                    self.processed_fields[field.get("field", {}).get("name", "datetime")] = field.get("value", {}).get("datetime")
+                elif (
+                    isinstance(field.get("value", {}), dict)
+                    and field.get("value", {}).get("value") is not None
+                ):
+                    self.processed_fields[field.get("field", {}).get("name", "value")] = field.get("value", {}).get("value")
+                else:
+                    self.processed_fields[field.get("field", {}).get("name", "name")] = field.get("value")
 
         for russian, english in self.fields_name_map.items():
             if russian in self.processed_fields:
                 self.processed_fields[english] = self.processed_fields.pop(russian)
+
         row.update(self.processed_fields)
+
+        row["offset"] = self.offset
+        row["upload_timestamp"] = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S.%f")
+
         return row
 
     @property
@@ -139,3 +147,9 @@ class PlanfixStream(RESTStream):
             The request timeout limit as number of seconds.
         """
         return DEFAULT_REQUEST_TIMEOUT
+
+    def backoff_wait_generator(self) -> Generator[float, None, None]:
+        return backoff.constant(120)
+
+    def backoff_max_tries(self) -> int:
+        return 10

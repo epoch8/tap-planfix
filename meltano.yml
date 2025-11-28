@@ -1,24 +1,56 @@
 version: 1
 send_anonymous_usage_stats: true
 project_id: 08140e91-bb02-4c3c-a45a-c29f103b61b8
+default_environment: dev
 plugins:
+
   extractors:
+
   - name: tap-planfix
     namespace: tap_planfix
-    pip_url: git+https://github.com/PontificAgima/tap-planfix@master
+    pip_url: -e .
     capabilities:
     - state
     - catalog
     - discover
     settings:
-    - name: username
-    - name: password
+    - name: planfix_url
+    - name: planfix_token
       kind: password
     - name: start_date
-      value: '2010-01-01T00:00:00Z'
-    config:
-      start_date: '2010-01-01T00:00:00Z'
+    - name: page_size
+    select:
+    - planfix_contacts.*
+    - planfix_tasks.*
+
   loaders:
+
   - name: target-jsonl
     variant: andyh1203
     pip_url: target-jsonl
+    config:
+      destination_path: output/
+      do_timestamp_file: true
+
+  - name: target-csv
+    variant: meltanolabs
+    pip_url: meltanolabs-target-csv
+    config:
+      destination_path: output/
+      batch_size_rows: 100
+
+  mappers:
+
+  - name: meltano-map-transformer
+    variant: meltano
+    pip_url: meltano-map-transform
+    executable: meltano-map-transform
+    mappings:
+    - name: mapper--planfix
+      config:
+        stream_maps:
+          planfix_contacts:
+            name: name.encode('utf-8', 'replace').decode('utf-8')
+
+environments:
+- name: dev
