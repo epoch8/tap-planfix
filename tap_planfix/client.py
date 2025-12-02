@@ -29,6 +29,7 @@ class PlanfixStream(RESTStream):
 
     rest_method = "POST"
     filters = []
+    filter_id = None
     fields = ""
     fields_name_map = {}
     filter_field_type_id = 0
@@ -67,6 +68,9 @@ class PlanfixStream(RESTStream):
             "filters": self.filters,
             "fields": self.fields,
         }
+
+        if self.filter_id:
+            payload["filterId"] = self.filter_id
 
         if self.replication_key and self.config.get("start_date"):
             starting_timestamp = (

@@ -22,6 +22,7 @@ plugins:
     select:
     - planfix_contacts.*
     - planfix_tasks.*
+    - filter__555412.*
 
   loaders:
 

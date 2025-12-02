@@ -200,3 +200,107 @@ class TasksStream(PlanfixStream):
         dict_task["upload_timestamp"] = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S.%f")
 
         return dict_task
+
+
+class Filter555412Stream(PlanfixStream):
+    name = "filter__555412"
+    path = "/task/list"
+    primary_keys = [to_translit("ID Цикла")]
+    records_jsonpath = "$.tasks[*]"
+    filters = []
+    filter_id = "555412"
+    fields = "id,name,counterparty,48510,48398,48506,48514,48516,48520,48518,48546,48522,48524,48526,48528,48530,48532,48534,48536,48538,48508,48512,48630"
+
+    fields_name_map = {
+        "id": to_translit("ID Цикла"),
+        "name": to_translit("Задача"),
+        "counterparty.name": to_translit("Контрагент"),
+        "counterparty.id": to_translit("ID контакта ПФ"),
+        48510: to_translit("SiteUserID"),
+        48398: to_translit("Email контакта"),
+        48506: to_translit("Дата перехода в Лид"),
+        48514: to_translit("Статус лида"),
+        48516: to_translit("revenue"),
+        48520: to_translit("promocode"),
+        48518: to_translit("coupon"),
+        48546: to_translit("t_payment for the return tour"),
+        48522: to_translit("bonus_amount"),
+        48524: to_translit("t_cancellation of the expert's debt (in the currency of the tour)"),
+        48526: to_translit("conversionType"),
+        48528: to_translit("t_utm_campaign"),
+        48530: to_translit("t_utm_content"),
+        48532: to_translit("t_utm_medium"),
+        48534: to_translit("t_utm_source"),
+        48536: to_translit("t_utm_string"),
+        48538: to_translit("t_utm_term"),
+        48508: to_translit("t_newclient"),
+        48512: to_translit("ДиВ изменения статуса лида"),
+        48630: to_translit("Travel agency"),
+    }
+
+    schema = th.PropertiesList(
+        th.Property(to_translit("ID Цикла"), th.IntegerType),
+        th.Property(to_translit("Задача"), th.StringType),
+        th.Property(to_translit("Контрагент"), th.StringType),
+        th.Property(to_translit("ID контакта ПФ"), th.StringType),
+        th.Property(to_translit("SiteUserID"), th.StringType),
+        th.Property(to_translit("Email контакта"), th.StringType),
+        th.Property(to_translit("Дата перехода в Лид"), th.DateTimeType),
+        th.Property(to_translit("Статус лида"), th.StringType),
+        th.Property(to_translit("revenue"), th.NumberType),
+        th.Property(to_translit("promocode"), th.StringType),
+        th.Property(to_translit("coupon"), th.NumberType),
+        th.Property(to_translit("t_payment for the return tour"), th.NumberType),
+        th.Property(to_translit("bonus_amount"), th.NumberType),
+        th.Property(to_translit("t_cancellation of the expert's debt (in the currency of the tour)"), th.NumberType),
+        th.Property(to_translit("conversionType"), th.StringType),
+        th.Property(to_translit("t_utm_campaign"), th.StringType),
+        th.Property(to_translit("t_utm_content"), th.StringType),
+        th.Property(to_translit("t_utm_medium"), th.StringType),
+        th.Property(to_translit("t_utm_source"), th.StringType),
+        th.Property(to_translit("t_utm_string"), th.StringType),
+        th.Property(to_translit("t_utm_term"), th.StringType),
+        th.Property(to_translit("t_newclient"), th.StringType),
+        th.Property(to_translit("ДиВ изменения статуса лида"), th.DateTimeType),
+        th.Property(to_translit("Travel agency"), th.BooleanType),
+        th.Property("offset", th.IntegerType),
+        th.Property("upload_timestamp", th.DateTimeType),
+    ).to_dict()
+
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+
+        dict_task = {}
+
+        dict_task['id'] = row.get('id')
+        dict_task['name'] = row.get('name')
+        dict_task['counterparty.id'] = row.get('counterparty', {}).get('id')
+        dict_task['counterparty.name'] = row.get('counterparty', {}).get('name')
+
+        for field in row.get('customFieldData', {}):
+            if (key := field.get('field', {}).get('id')) is not None:
+                try:
+                    if field.get('stringValue') == '':
+                        dict_task[key] = None
+                    elif key in [48506, 48512]:
+                        dict_task[key] = datetime.datetime.strptime(field.get('stringValue'), '%d-%m-%Y %H:%M')
+                        dict_task[key] = datetime.datetime.strftime(dict_task[key], '%Y-%m-%d %H:%M:%S')
+                    elif key in [48516, 48546, 48522, 48524]:
+                        dict_task[key] = float(field.get('value'))
+                    elif key in [48518]:
+                        dict_task[key] = float(str(field.get('value')).replace(' ', ''))
+                    elif key in [48630]:
+                        dict_task[key] = field.get('value')
+                    else:
+                        dict_task[key] = field.get('stringValue')
+                except ValueError as error:
+                    self.logger.warning(msg=f"ValueError!\n\n{error}\n\n\tRecord ID:\t{dict_task['id']}\n\tField ID:\t{key}\n\n{field}")
+                    dict_task[key] = None
+
+        for name_old, name_new in self.fields_name_map.items():
+            if name_old in dict_task:
+                dict_task[name_new] = dict_task.pop(name_old)
+
+        dict_task["offset"] = self.offset
+        dict_task["upload_timestamp"] = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S.%f")
+
+        return dict_task
