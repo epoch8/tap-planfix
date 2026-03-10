@@ -304,3 +304,100 @@ class Filter555412Stream(PlanfixStream):
         dict_task["upload_timestamp"] = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S.%f")
 
         return dict_task
+
+
+class Filters511174931Stream(PlanfixStream):
+    name = "filters_51_1174931"
+    path = "/task/list"
+    primary_keys = [to_translit("id")]
+    records_jsonpath = "$.tasks[*]"
+    filters = [
+        {
+            "type": 51,
+            "operator": "equal",
+            "value": 1174931,
+        }
+    ]
+    fields = "id,name,counterparty,48510,48398,48506,48514,48516,48520,48518,48546,48522,48524,48526,48528,48530,48532,48534,48536,48538,48508,48512,48630"
+
+    fields_name_map = {
+        "id": to_translit("id"),
+        "name": to_translit("name"),
+        "status": to_translit("status"),
+        "counterparty": to_translit("counterparty"),
+        47248: to_translit("Revenue in rubles"),
+        47254: to_translit("Write-off of expert's debt (in tour currency)"),
+        47486: to_translit("Сотрудник"),
+        47556: to_translit("Дата предоплаты"),
+        48040: to_translit("Номер предоплаты"),
+        48080: to_translit("Доплата за возвратный тур (+10%), рубли"),
+        48104: to_translit("Вклад в сделку"),
+        48282: to_translit("Сумма бонусов, руб"),
+        48288: to_translit("Комиссия по допуслуге, руб"),
+        48296: to_translit("Сумма промокодов, руб (число)"),
+        48398: to_translit("E-mail контрагента"),
+        48510: to_translit("SiteUserID"),
+        48514: to_translit("state"),
+    }
+
+    schema = th.PropertiesList(
+        th.Property(to_translit("id"), th.IntegerType),
+        th.Property(to_translit("name"), th.StringType),
+        th.Property(to_translit("status"), th.StringType),
+        th.Property(to_translit("counterparty"), th.StringType),
+        th.Property(to_translit("Revenue in rubles"), th.NumberType),
+        th.Property(to_translit("Write-off of expert's debt (in tour currency)"), th.NumberType),
+        th.Property(to_translit("Сотрудник"), th.StringType),
+        th.Property(to_translit("Дата предоплаты"), th.DateTimeType),
+        th.Property(to_translit("Номер предоплаты"), th.StringType),
+        th.Property(to_translit("Доплата за возвратный тур (+10%), рубли"), th.NumberType),
+        th.Property(to_translit("Вклад в сделку"), th.StringType),
+        th.Property(to_translit("Сумма бонусов, руб"), th.NumberType),
+        th.Property(to_translit("Комиссия по допуслуге, руб"), th.NumberType),
+        th.Property(to_translit("Сумма промокодов, руб (число)"), th.NumberType),
+        th.Property(to_translit("E-mail контрагента"), th.StringType),
+        th.Property(to_translit("SiteUserID"), th.StringType),
+        th.Property(to_translit("state"), th.StringType),
+        th.Property("offset", th.IntegerType),
+        th.Property("upload_timestamp", th.DateTimeType),
+    ).to_dict()
+
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+
+        dict_task = {}
+
+        dict_task["id"] = row.get("id")
+        dict_task["name"] = row.get("name")
+        dict_task["status"] = row.get("status", {}).get("name")
+        dict_task["counterparty"] = row.get("counterparty", {}).get("name")
+
+        for field in row.get("customFieldData", {}):
+            if (key := field.get("field", {}).get("id")) is not None:
+                try:
+                    if field.get("stringValue") == "":
+                        dict_task[key] = None
+                    elif key in [47556]:
+                        dict_task[key] = datetime.datetime.strptime(field.get("stringValue"), "%d-%m-%Y %H:%M")
+                        dict_task[key] = datetime.datetime.strftime(dict_task[key], "%Y-%m-%d %H:%M:%S")
+                    elif key in [47248, 47254, 48080, 48282, 48288, 48296]:
+                        dict_task[key] = float(field.get("value"))
+                    elif key in []:
+                        dict_task[key] = float(str(field.get("value")).replace(" ", ""))
+                    elif key in []:
+                        dict_task[key] = field.get("value")
+                    elif key in []:
+                        dict_task[key] = field.get("value", {}).get("value")
+                    else:
+                        dict_task[key] = field.get("stringValue")
+                except ValueError as error:
+                    self.logger.warning(msg=f"ValueError!\n\n{error}\n\n\tRecord ID:\t{dict_task['id']}\n\tField ID:\t{key}\n\n{field}")
+                    dict_task[key] = None
+
+        for name_old, name_new in self.fields_name_map.items():
+            if name_old in dict_task:
+                dict_task[name_new] = dict_task.pop(name_old)
+
+        dict_task["offset"] = self.offset
+        dict_task["upload_timestamp"] = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S.%f")
+
+        return dict_task

@@ -9,12 +9,14 @@ from tap_planfix.streams import (
     ContactsStream,
     TasksStream,
     Filter555412Stream,
+    Filters511174931Stream,
 )
 
 STREAM_TYPES = [
     ContactsStream,
     TasksStream,
     Filter555412Stream,
+    Filters511174931Stream,
 ]
 
 
