@@ -318,7 +318,7 @@ class Filters511174931Stream(PlanfixStream):
             "value": 1174931,
         }
     ]
-    fields = "id,name,counterparty,48510,48398,48506,48514,48516,48520,48518,48546,48522,48524,48526,48528,48530,48532,48534,48536,48538,48508,48512,48630"
+    fields = "id,name,47556,48040,47486,48104,47248,48080,48288,counterparty,48398,48514,48510,48296,48282,47254,status"
 
     fields_name_map = {
         "id": to_translit("id"),
