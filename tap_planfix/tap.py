@@ -7,14 +7,18 @@ from singer_sdk import typing as th  # JSON schema typing helpers
 
 from tap_planfix.streams import (
     ContactsStream,
+    ContactsLast30DaysStream,
     TasksStream,
+    TasksLast30DaysStream,
     Filter555412Stream,
     Filters511174931Stream,
 )
 
 STREAM_TYPES = [
     ContactsStream,
+    ContactsLast30DaysStream,
     TasksStream,
+    TasksLast30DaysStream,
     Filter555412Stream,
     Filters511174931Stream,
 ]

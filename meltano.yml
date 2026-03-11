@@ -21,7 +21,9 @@ plugins:
     - name: page_size
     select:
     - planfix_contacts.*
+    - planfix_contacts_last_30_days.*
     - planfix_tasks.*
+    - planfix_tasks_last_30_days.*
     - filter__555412.*
     - filters_51_1174931.*
 

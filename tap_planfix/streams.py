@@ -82,6 +82,54 @@ class ContactsStream(PlanfixStream):
     ).to_dict()  # type: ignore
 
 
+class ContactsLast30DaysStream(PlanfixStream):
+    name = "planfix_contacts_last_30_days"
+    path = "/contact/list"
+    primary_keys = ["id"]  # type: ignore
+    records_jsonpath = "$.contacts[*]"
+    filters = []
+    filter_id = 556256
+
+    fields = "id,name,lastname,email,phones,47368,47376,47378,47666,47676,47682,47918,47920,47924,47932,47938"
+    fields_name_map = {
+        "UTM разметка": "UTM markup",
+        "Язык пользовательского интерфейса": "User interface language",
+        "Лид (для аналитики)": "Lead (for analytics)",
+        'Дата перехода в "Лид"+45д': "Transition date to Lead+45d",
+        "Дата посл сообщения +15д": "Date of last message +15d",
+    }
+
+    schema = th.PropertiesList(
+        th.Property("id", th.IntegerType),
+        th.Property("name", th.StringType),
+        th.Property("lastname", th.StringType),
+        th.Property("email", th.StringType),
+        th.Property(
+            "phones",
+            th.ArrayType(
+                th.ObjectType(
+                    th.Property("number", th.StringType),
+                    th.Property("maskedNumber", th.StringType),
+                    th.Property("type", th.IntegerType),
+                )
+            )
+        ),
+        th.Property("UF_GOOGLE_CID", th.StringType),
+        th.Property("UTM markup", th.StringType),
+        th.Property("REF", th.StringType),
+        th.Property("SiteUserID", th.StringType),
+        th.Property("PF id", th.StringType),
+        th.Property("User interface language", th.StringType),
+        th.Property("Lead (for analytics)", th.BooleanType),
+        th.Property("Transition date to Lead+45d", th.StringType),
+        th.Property("Date of last message +15d", th.StringType),
+        th.Property("Profile", th.StringType),
+        th.Property("Contact person", th.StringType),
+        th.Property("offset", th.IntegerType),
+        th.Property("upload_timestamp", th.DateTimeType),
+    ).to_dict()
+
+
 class TasksStream(PlanfixStream):
     name = "planfix_tasks"
     path = "/task/list"
@@ -160,6 +208,112 @@ class TasksStream(PlanfixStream):
         th.Property("offset", th.IntegerType),
         th.Property("upload_timestamp", th.DateTimeType),
     ).to_dict()  # type: ignore
+
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+
+        dict_task = {}
+
+        dict_task['id'] = row.get('id')
+        dict_task['name'] = row.get('name')
+        dict_task['status'] = row.get('status', {}).get('name')
+        dict_task['assignees'] = ", ".join([f"{assignee.get('name')} ({assignee.get('id')})" for assignee in row.get('assignees', {}).get('users', [])])
+
+        for field in row.get('customFieldData', {}):
+            if (key := field.get('field', {}).get('id')) is not None:
+                try:
+                    if field.get('stringValue') == '':
+                        dict_task[key] = None
+                    elif key in [47508, 48246, 48440, 47288, 48138, 47292, 48078]:
+                        dict_task[key] = datetime.datetime.strptime(field.get('stringValue'), '%d-%m-%Y %H:%M')
+                        dict_task[key] = datetime.datetime.strftime(dict_task[key], '%Y-%m-%d %H:%M:%S')
+                    elif key in []:
+                        dict_task[key] = float(field.get('value'))
+                    elif key in []:
+                        dict_task[key] = float(str(field.get('value')).replace(' ', ''))
+                    elif key in []:
+                        dict_task[key] = field.get('value')
+                    elif key in [47282, 47210, 47274]:
+                        dict_task[key] = field.get('value', {}).get('value')
+                    else:
+                        dict_task[key] = field.get('stringValue')
+                except ValueError as error:
+                    self.logger.warning(msg=f"ValueError!\n\n{error}\n\n\tRecord ID:\t{dict_task['id']}\n\tField ID:\t{key}\n\n{field}")
+                    dict_task[key] = None
+
+        for name_old, name_new in self.fields_name_map.items():
+            if name_old in dict_task:
+                dict_task[name_new] = dict_task.pop(name_old)
+
+        dict_task["offset"] = self.offset
+        dict_task["upload_timestamp"] = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S.%f")
+
+        return dict_task
+
+
+class TasksLast30DaysStream(PlanfixStream):
+    name = "planfix_tasks_last_30_days"
+    path = "/task/list"
+    primary_keys = ["id"]
+    records_jsonpath = "$.tasks[*]"
+    filters = []
+    fields = "id,name,status,48438,48440,47508,48246,47288,48138,48078,47292,48450,assignees,47282,47210,47274,47276,47284,47664,48824,48826,48664,48510,48812"
+    filter_id = 556252
+
+    fields_name_map = {
+        "id": to_translit("id"),
+        "name": to_translit("name"),
+        "status": to_translit("status"),
+        "assignees": to_translit("assignees"),
+        48450: to_translit("Тематики обращения"),
+        47282: to_translit("Application type"),
+        47508: to_translit("D&T of the new request"),
+        48438: to_translit("Тэги обращения"),
+        48246: to_translit("ДиВ передачи в другой отдел"),
+        48440: to_translit("ДиВ создания обращения"),
+        47288: to_translit("Date and time of acceptance by the contractor"),
+        48138: to_translit("Дата и время первого ответа"),
+        47210: to_translit("Prefix"),
+        47274: to_translit("Execution result"),
+        47292: to_translit("End date and time"),
+        48078: to_translit("Дата и время перевода в Обратную связ"),
+        47276: to_translit("Grade"),
+        47284: to_translit("Customer Priority"),
+        47664: to_translit("Test Dev"),
+        48824: to_translit("Кол-во комментариев контрагента"),
+        48826: to_translit("Кол-во комментариев сотрудника"),
+        48664: to_translit("Тип созданного обращения"),
+        48510: to_translit("SiteUserID"),
+        48812: to_translit("Маршрутизированная группа исполнителей"),
+    }
+
+    schema = th.PropertiesList(
+        th.Property(to_translit("id"), th.IntegerType),
+        th.Property(to_translit("name"), th.StringType),
+        th.Property(to_translit("status"), th.StringType),
+        th.Property(to_translit("assignees"), th.StringType),
+        th.Property(to_translit("Тематики обращения"), th.StringType),
+        th.Property(to_translit("Application type"), th.StringType),
+        th.Property(to_translit("D&T of the new request"), th.DateTimeType),
+        th.Property(to_translit("Тэги обращения"), th.StringType),
+        th.Property(to_translit("ДиВ передачи в другой отдел"), th.DateTimeType),
+        th.Property(to_translit("ДиВ создания обращения"), th.DateTimeType),
+        th.Property(to_translit("Date and time of acceptance by the contractor"), th.DateTimeType),
+        th.Property(to_translit("Дата и время первого ответа"), th.DateTimeType),
+        th.Property(to_translit("Prefix"), th.StringType),
+        th.Property(to_translit("Execution result"), th.StringType),
+        th.Property(to_translit("End date and time"), th.DateTimeType),
+        th.Property(to_translit("Дата и время перевода в Обратную связ"), th.DateTimeType),
+        th.Property(to_translit("Grade"), th.StringType),
+        th.Property(to_translit("Customer Priority"), th.StringType),
+        th.Property(to_translit("Test Dev"), th.StringType),
+        th.Property(to_translit("Кол-во комментариев контрагента"), th.StringType),
+        th.Property(to_translit("Кол-во комментариев сотрудника"), th.StringType),
+        th.Property(to_translit("Тип созданного обращения"), th.StringType),
+        th.Property(to_translit("SiteUserID"), th.StringType),
+        th.Property(to_translit("Маршрутизированная группа исполнителей"), th.StringType),
+        th.Property("offset", th.IntegerType),
+        th.Property("upload_timestamp", th.DateTimeType),
+    ).to_dict()
 
     def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
 
