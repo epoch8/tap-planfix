@@ -472,7 +472,7 @@ class Filters511174931Stream(PlanfixStream):
             "value": 1174931,
         }
     ]
-    fields = "id,name,47556,48040,47486,48104,47248,48080,48288,counterparty,48398,48514,48510,48296,48282,47254,status"
+    fields = "id,name,47556,48040,47486,48104,47248,48080,48288,counterparty,48398,48514,48510,48296,48282,47254,status,47664"
 
     fields_name_map = {
         "id": to_translit("id"),
@@ -492,6 +492,7 @@ class Filters511174931Stream(PlanfixStream):
         48398: to_translit("E-mail контрагента"),
         48510: to_translit("SiteUserID"),
         48514: to_translit("state"),
+        47664: to_translit("Test Dev"),
     }
 
     schema = th.PropertiesList(
@@ -512,6 +513,7 @@ class Filters511174931Stream(PlanfixStream):
         th.Property(to_translit("E-mail контрагента"), th.StringType),
         th.Property(to_translit("SiteUserID"), th.StringType),
         th.Property(to_translit("state"), th.StringType),
+        th.Property(to_translit("Test Dev"), th.StringType),
         th.Property("offset", th.IntegerType),
         th.Property("upload_timestamp", th.DateTimeType),
     ).to_dict()
