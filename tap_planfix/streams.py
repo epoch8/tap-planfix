@@ -339,7 +339,11 @@ class TasksLast30DaysStream(PlanfixStream):
                     elif key in []:
                         dict_task[key] = field.get('value')
                     elif key in [47282, 47210, 47274]:
-                        dict_task[key] = field.get('value', {}).get('value')
+                        # dict_task[key] = field.get('value', {}).get('value')
+                        if (value := field.get('value', {})) is not None:
+                            dict_task[key] = value.get('value')
+                        else:
+                            dict_task[key] = None
                     else:
                         dict_task[key] = field.get('stringValue')
                 except ValueError as error:
