@@ -422,7 +422,7 @@ class Filter555412Stream(PlanfixStream):
         th.Property(to_translit("t_newclient"), th.StringType),
         th.Property(to_translit("ДиВ изменения статуса лида"), th.DateTimeType),
         th.Property(to_translit("Travel agency"), th.BooleanType),
-        th.Property(to_translit("Ссылки на тур"), th.BooleanType),
+        th.Property(to_translit("Ссылки на тур"), th.StringType),
         th.Property("offset", th.IntegerType),
         th.Property("upload_timestamp", th.DateTimeType),
     ).to_dict()
