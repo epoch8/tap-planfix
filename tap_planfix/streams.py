@@ -367,7 +367,7 @@ class Filter555412Stream(PlanfixStream):
     records_jsonpath = "$.tasks[*]"
     filters = []
     filter_id = "555412"
-    fields = "id,name,counterparty,48510,48398,48506,48514,48516,48520,48518,48546,48522,48524,48526,48528,48530,48532,48534,48536,48538,48508,48512,48630"
+    fields = "id,name,counterparty,48510,48398,48506,48514,48516,48520,48518,48546,48522,48524,48526,48528,48530,48532,48534,48536,48538,48508,48512,48630,48846"
 
     fields_name_map = {
         "id": to_translit("ID Цикла"),
@@ -394,6 +394,7 @@ class Filter555412Stream(PlanfixStream):
         48508: to_translit("t_newclient"),
         48512: to_translit("ДиВ изменения статуса лида"),
         48630: to_translit("Travel agency"),
+        48846: to_translit("Ссылки на тур"),
     }
 
     schema = th.PropertiesList(
@@ -421,6 +422,7 @@ class Filter555412Stream(PlanfixStream):
         th.Property(to_translit("t_newclient"), th.StringType),
         th.Property(to_translit("ДиВ изменения статуса лида"), th.DateTimeType),
         th.Property(to_translit("Travel agency"), th.BooleanType),
+        th.Property(to_translit("Ссылки на тур"), th.BooleanType),
         th.Property("offset", th.IntegerType),
         th.Property("upload_timestamp", th.DateTimeType),
     ).to_dict()
